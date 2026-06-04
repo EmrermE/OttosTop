@@ -659,9 +659,15 @@ body.light-theme .map-zoom-controls {
     color: var(--text-primary);
 }
 
+body.light-theme .input-wrapper select option {
+    background: #ffffff;
+    color: #1d1d1f;
+}
+
 /* BEKLEME KUYRUGU (FIFO QUEUE) */
 .queue-list-container {
-    max-height: 220px;
+    flex: 1 1 0;
+    min-height: 220px;
     overflow-y: auto;
     padding-right: 6px;
 }

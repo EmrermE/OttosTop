@@ -11,13 +11,14 @@ from models import Graph, Vehicle, Customer
 class SystemManager:
     """
     Sistemin haritasını, araç listesini, bekleyen müşterileri yöneten 
-    ve Dijkstra rotalamasını çalıştıran ana simülasyon yönetim sınıfı.
+    ve rotalamayı çalıştıran ana simülasyon yönetim sınıfı.
     """
     def __init__(self):
         self.city_map = Graph()
         self.local_vehicles: List[Vehicle] = []
         self.waiting_customers = deque()  # FIFO (First-In-First-Out) Kuyruğu
         self.logs: List[str] = []         # Simülasyon adımlarının logları
+        self._path_cache = {}
 
     def initialize_system(self):
         """
@@ -29,52 +30,94 @@ class SystemManager:
         self.local_vehicles = []
         self.waiting_customers = deque()
         self.logs = ["Simülasyon sistemi başlatıldı."]
+        self._path_cache = {}
 
-        # 1. Adım: Örnek Beşiktaş Yol Ağını Oluşturma
-        self.city_map.add_route("Dolmabahce", "Akaretler", 1.2)
-        self.city_map.add_route("Dolmabahce", "Meydan", 0.8)
-        self.city_map.add_route("Macka", "Visnezade", 0.9)
-        self.city_map.add_route("Visnezade", "Akaretler", 0.7)
-        self.city_map.add_route("Akaretler", "Carsi", 0.6)
-        self.city_map.add_route("Carsi", "Meydan", 0.4)
-        self.city_map.add_route("Carsi", "Sinanpasa", 0.5)
-        self.city_map.add_route("Sinanpasa", "Meydan", 0.3)
-        self.city_map.add_route("Sinanpasa", "Turkali", 1.0)
-        self.city_map.add_route("Muradiye", "Turkali", 0.6)
-        self.city_map.add_route("Visnezade", "Muradiye", 0.8)
-        self.city_map.add_route("Muradiye", "Ihlamur", 0.7)
-        self.city_map.add_route("Turkali", "Ihlamur", 0.5)
-        self.city_map.add_route("Turkali", "Abbasaga", 0.8)
-        self.city_map.add_route("Ihlamur", "Dikilitas", 0.9)
-        self.city_map.add_route("Dikilitas", "Abbasaga", 1.1)
-        self.city_map.add_route("Abbasaga", "Barbaros", 0.5)
-        self.city_map.add_route("Sinanpasa", "Barbaros", 0.6)
-        self.city_map.add_route("Meydan", "Ciragan", 1.2)
-        self.city_map.add_route("Meydan", "Barbaros", 0.8)
-        self.city_map.add_route("Barbaros", "YTU", 0.9)
-        self.city_map.add_route("YTU", "Dikilitas", 1.2)
-        self.city_map.add_route("YTU", "Balmumcu", 1.0)
-        self.city_map.add_route("Balmumcu", "Dikilitas", 1.4)
-        self.city_map.add_route("YTU", "YildizParki", 0.8)
-        self.city_map.add_route("YildizParki", "Ciragan", 1.0)
-        self.city_map.add_route("Ciragan", "Ortakoy", 1.5)
-        self.city_map.add_route("YildizParki", "Ortakoy", 1.3)
-        self.city_map.add_route("Balmumcu", "Ortakoy", 2.5)
+        # 1. Adım: Örnek Yol Ağını Oluşturma
+        routes = [
+            # Beşiktaş Merkez
+            ("Dolmabahce", "Akaretler", 1.2),
+            ("Dolmabahce", "Meydan", 0.8),
+            ("Macka", "Visnezade", 0.9),
+            ("Visnezade", "Akaretler", 0.7),
+            ("Akaretler", "Carsi", 0.6),
+            ("Carsi", "Meydan", 0.4),
+            ("Carsi", "Sinanpasa", 0.5),
+            ("Sinanpasa", "Meydan", 0.3),
+            ("Sinanpasa", "Turkali", 1.0),
+            ("Muradiye", "Turkali", 0.6),
+            ("Visnezade", "Muradiye", 0.8),
+            ("Muradiye", "Ihlamur", 0.7),
+            ("Turkali", "Ihlamur", 0.5),
+            ("Turkali", "Abbasaga", 0.8),
+            ("Ihlamur", "Dikilitas", 0.9),
+            ("Dikilitas", "Abbasaga", 1.1),
+            ("Abbasaga", "Barbaros", 0.5),
+            ("Sinanpasa", "Barbaros", 0.6),
+            ("Meydan", "Ciragan", 1.2),
+            ("Meydan", "Barbaros", 0.8),
+            ("Barbaros", "YTU", 0.9),
+            ("YTU", "Dikilitas", 1.2),
+            ("YTU", "Balmumcu", 1.0),
+            ("Balmumcu", "Dikilitas", 1.4),
+            ("YTU", "YildizParki", 0.8),
+            ("YildizParki", "Ciragan", 1.0),
+            ("Ciragan", "Ortakoy", 1.5),
+            ("YildizParki", "Ortakoy", 1.3),
+            ("Balmumcu", "Ortakoy", 2.5),
+            
+            # Bahçeşehir Üniversitesi (BAU) ve Yeni Durak Bağlantıları
+            ("BAU", "Meydan", 0.3),
+            ("BAU", "Barbaros", 0.5),
+            ("BAU", "Ciragan", 0.8),
+            ("BAU", "Sinanpasa", 0.4),
+            ("EvlendirmeDairesi", "Ihlamur", 0.5),
+            ("EvlendirmeDairesi", "Dikilitas", 0.6),
+            ("EvlendirmeDairesi", "Abbasaga", 0.7),
+            ("Karanfilkoy", "Ortakoy", 1.8),
+            ("Karanfilkoy", "Balmumcu", 1.2),
 
-        # Bahçeşehir Üniversitesi (BAU) ve Yeni Durak Bağlantıları
-        self.city_map.add_route("BAU", "Meydan", 0.3)
-        self.city_map.add_route("BAU", "Barbaros", 0.5)
-        self.city_map.add_route("BAU", "Ciragan", 0.8)
-        self.city_map.add_route("BAU", "Sinanpasa", 0.4)
-        
-        self.city_map.add_route("EvlendirmeDairesi", "Ihlamur", 0.5)
-        self.city_map.add_route("EvlendirmeDairesi", "Dikilitas", 0.6)
-        self.city_map.add_route("EvlendirmeDairesi", "Abbasaga", 0.7)
-        
-        self.city_map.add_route("Karanfilkoy", "Ortakoy", 1.8)
-        self.city_map.add_route("Karanfilkoy", "Balmumcu", 1.2)
+            # Yeni Düğüm Bağlantıları
+            ("Kabatas", "Dolmabahce", 0.8),
+            ("Kabatas", "Macka", 1.4),
+            ("Nisantasi", "Macka", 0.7),
+            ("Nisantasi", "Visnezade", 1.0),
+            ("Fulya", "Muradiye", 0.9),
+            ("Fulya", "Ihlamur", 0.6),
+            ("Gayrettepe", "Dikilitas", 0.8),
+            ("Gayrettepe", "Balmumcu", 1.1),
+            ("Gayrettepe", "Levazim", 0.9),
+            ("Levazim", "Balmumcu", 0.7),
+            ("Levazim", "YTU", 0.8),
+            ("Levent", "Levazim", 1.0),
+            ("Levent", "Karanfilkoy", 1.2),
+            ("Ulus", "Karanfilkoy", 0.8),
+            ("Ulus", "Ortakoy", 1.4),
+            ("Ulus", "Bebek", 1.1),
+            ("Bebek", "Ortakoy", 1.2),
+            ("Uskudar", "Ortakoy", 2.8),
+            
+            # Üsküdar Bölgesi Ek Duraklar
+            ("Harem", "Uskudar", 1.8),
+            ("Harem", "Kadikoy", 2.0),
+            ("Salacak", "Uskudar", 1.0),
+            ("Salacak", "Harem", 1.5),
+            ("Kadikoy", "Uskudar", 3.5),
+            ("Kuzguncuk", "Uskudar", 1.2),
+            ("Kuzguncuk", "Nakkastepe", 0.9),
+            ("Kuzguncuk", "Beylerbeyi", 1.5),
+            ("Nakkastepe", "Beylerbeyi", 1.1),
+            ("Beylerbeyi", "Cengelkoy", 1.8),
+            ("Cengelkoy", "Kandilli", 2.0),
+            ("Kadikoy", "Camlica", 2.5),
+            ("Uskudar", "Camlica", 2.2),
+            ("Camlica", "Umraniye", 3.0),
+            ("Nakkastepe", "Camlica", 1.5)
+        ]
 
-        self.logs.append("Beşiktaş Bölge Haritası oluşturuldu (21 Durak: Meydan, Carsi, Akaretler, Visnezade, Dolmabahce, Macka, Sinanpasa, Turkali, Muradiye, Ihlamur, Abbasaga, Barbaros, YTU, YildizParki, Ciragan, Ortakoy, Balmumcu, Dikilitas, BAU, EvlendirmeDairesi, Karanfilkoy).")
+        for source, target, distance in routes:
+            self.city_map.add_route(source, target, distance)
+
+        self.logs.append("Beşiktaş & Boğaziçi Bölge Haritası oluşturuldu.")
 
         # 2. Adım: Örnek Araçlar Tanımlama ve Konumlandırma
         # Plakaları ve başlangıç konumlarını belirleyip sisteme ekliyoruz.
@@ -99,6 +142,10 @@ class SystemManager:
         
         Aşağıda heap veri yapısı ile algoritmanın adım adım çalışması Türkçe açıklanmıştır.
         """
+        cache_key = (start_name, end_name)
+        if hasattr(self, '_path_cache') and cache_key in self._path_cache:
+            return self._path_cache[cache_key]
+
         # Haritada başlangıç ve hedef durakların olup olmadığını kontrol et
         if start_name not in self.city_map.vertices or end_name not in self.city_map.vertices:
             return float('inf'), []
@@ -162,9 +209,13 @@ class SystemManager:
 
         # Eğer başlangıç ile hedef arasında hiçbir bağlantı yoksa mesafe sonsuz döner
         if distances[end_name] == float('inf'):
-            return float('inf'), []
-
-        return distances[end_name], path
+            res = float('inf'), []
+        else:
+            res = distances[end_name], path
+            
+        if hasattr(self, '_path_cache'):
+            self._path_cache[cache_key] = res
+        return res
 
     def process_next_customer(self, selected_vehicle_id: Optional[str] = None) -> Optional[dict]:
         """
@@ -398,42 +449,24 @@ class SystemManager:
                         if len(passengers_in_car) > 0:
                             active_distance += segment_dist
                             
-                    total_active_cost = active_distance * 10.0
+                    total_journey_cost = 25.0 + active_distance * 8.0
                     
-                    # 2. Calculate individual travel distance inside the taxi for each passenger
-                    travel_distances = {p_idx: 0.0 for p_idx in range(n)}
-                    for p_idx in range(n):
-                        t_dist = 0.0
-                        for i in range(picked_up[p_idx], delivered[p_idx]):
-                            t_dist += get_dist(full_path[i], full_path[i+1])
-                        travel_distances[p_idx] = t_dist
-                        
-                    sum_travel_distances = sum(travel_distances.values())
-                    
-                    # 3. Share the total active cost proportionally to individual travel distances and apply sustainable discounts
+                    # 2. Share the total journey cost proportionally based on their solo fares
                     discounted_fares = {p_idx: 0.0 for p_idx in range(n)}
+                    solo_fares = [25.0 + solo_trips[p_idx] * 8.0 for p_idx in range(n)]
+                    sum_solo_fares = sum(solo_fares)
+                    
                     for p_idx in range(n):
-                        p = passengers_list[p_idx]
-                        solo_dist = solo_trips[p_idx]
-                        solo_fare = solo_dist * 10.0
-                        
-                        travel_dist = travel_distances[p_idx]
-                        if sum_travel_distances > 0:
-                            proportion = travel_dist / sum_travel_distances
+                        solo_fare = solo_fares[p_idx]
+                        if sum_solo_fares > 0:
+                            proportion = solo_fare / sum_solo_fares
                         else:
                             proportion = 1.0 / n
                             
-                        # Proportional share of the active trip cost
-                        raw_share = proportion * total_active_cost
+                        shared_fare = total_journey_cost * proportion
                         
-                        if n >= 2:
-                            # Proportional share capped at direct solo fare to guarantee they never pay more than traveling alone
-                            final_fare = min(raw_share, solo_fare)
-                        else:
-                            # Solo rides pay their full solo fare
-                            final_fare = solo_fare
-                            
-                        discounted_fares[p_idx] = final_fare
+                        # Guarantee they never pay more than traveling alone
+                        discounted_fares[p_idx] = min(shared_fare, solo_fare)
                     
                     best_match_data = {
                         "pickup": {
@@ -478,7 +511,7 @@ class SystemManager:
                     solo_sum = 0.0
                     for p in combo:
                         solo_d = get_dist(p.current_location, p.destination)
-                        solo_sum += solo_d * 10.0 if solo_d != float('inf') else 0.0
+                        solo_sum += (25.0 + solo_d * 8.0) if solo_d != float('inf') else 0.0
                     
                     shared_sum = sum(match_data["fares"].values())
                     total_savings = max(0.0, solo_sum - shared_sum)
@@ -614,7 +647,7 @@ class SystemManager:
                             "trip": {"distance": dist, "route": path},
                             "total_distance": solo_cand["pickup"]["distance"] + dist,
                             "score": 1.0 / (solo_cand["pickup"]["distance"] + dist),
-                            "fares": {c1.id: dist * 10.0}
+                            "fares": {c1.id: 25.0 + dist * 8.0}
                         })
                         if len(options) == 3:
                             break
@@ -645,7 +678,7 @@ class SystemManager:
                 p_dict = p.to_dict()
                 fare_val = opt_fares.get(p.id, 0.0)
                 solo_dist = get_dist(p.current_location, p.destination)
-                solo_fare_val = solo_dist * 10.0 if solo_dist != float('inf') else 0.0
+                solo_fare_val = (25.0 + solo_dist * 8.0) if solo_dist != float('inf') else 0.0
                 p_dict["fare"] = fare_val
                 p_dict["solo_fare"] = solo_fare_val
                 p_dict["saving"] = max(0.0, solo_fare_val - fare_val)
@@ -689,7 +722,7 @@ class SystemManager:
             c_dict = cust.to_dict()
             fare_val = best_fares.get(cust.id, 0.0)
             solo_dist = get_dist(cust.current_location, cust.destination)
-            solo_fare_val = solo_dist * 10.0 if solo_dist != float('inf') else 0.0
+            solo_fare_val = (25.0 + solo_dist * 8.0) if solo_dist != float('inf') else 0.0
             c_dict["fare"] = fare_val
             c_dict["solo_fare"] = solo_fare_val
             c_dict["saving"] = max(0.0, solo_fare_val - fare_val)

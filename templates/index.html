@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +8,18 @@
     <!-- Google Fonts - Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome Icons for modern aesthetic -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
     <div class="glass-bg"></div>
-    
+
     <div class="app-container">
         <!-- HEADER -->
         <header class="header">
@@ -42,24 +46,19 @@
 
         <!-- MAIN LAYOUT -->
         <main class="dashboard-layout">
-            
+
             <!-- TOP SECTION: HARİTA GÖRSELLEŞTİRME (FULL WIDTH) -->
             <section class="panel map-panel">
                 <div class="panel-header">
                     <h2><i class="fa-solid fa-map-location-dot"></i> İnteraktif İstanbul Durak Haritası</h2>
-                    <span class="info-tag">Dijkstra Canlı Rotalama</span>
+                    <!--<span class="info-tag">Dijkstra Canlı Rotalama</span>-->
                 </div>
                 <div class="canvas-container">
                     <canvas id="map-canvas"></canvas>
 
-                    <div class="map-zoom-controls">
-                        <button type="button" id="btn-zoom-in" title="Yakınlaş"><i class="fa-solid fa-plus"></i></button>
-                        <button type="button" id="btn-zoom-out" title="Uzaklaş"><i class="fa-solid fa-minus"></i></button>
-                        <button type="button" id="btn-zoom-reset" title="Sıfırla"><i class="fa-solid fa-expand"></i></button>
-                    </div>
-
                     <div id="map-overlay" class="map-overlay hidden">
-                        <div class="overlay-card" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="overlay-card"
+                            style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div style="display: flex; align-items: center; gap: 16px;">
                                 <i class="fa-solid fa-taxi overlay-icon animate-bounce"></i>
                                 <div class="overlay-text">
@@ -67,12 +66,14 @@
                                     <p id="overlay-desc">Araç yola çıktı.</p>
                                 </div>
                             </div>
-                            <button id="btn-stop-anim" class="btn btn-secondary btn-stop" title="Simülasyonu Durdur/İptal Et" style="padding: 10px; border-radius: 50%; width: 40px; height: 40px; border-color: var(--danger); color: var(--danger); background: rgba(239, 68, 68, 0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; pointer-events: auto;">
+                            <button id="btn-stop-anim" class="btn btn-secondary btn-stop"
+                                title="Simülasyonu Durdur/İptal Et"
+                                style="padding: 10px; border-radius: 50%; width: 40px; height: 40px; border-color: var(--danger); color: var(--danger); background: rgba(239, 68, 68, 0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; pointer-events: auto;">
                                 <i class="fa-solid fa-circle-stop" style="font-size: 1.25rem;"></i>
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Arabadaki Aktif Yolcular Pill Göstergesi (Sol Alt) -->
                     <div id="active-passengers-pill" class="active-passengers-pill hidden">
                         <i class="fa-solid fa-taxi"></i>
@@ -84,22 +85,28 @@
                     <div id="route-selector-overlay" class="route-selector-overlay hidden">
                         <div class="route-selector-card">
                             <h3><i class="fa-solid fa-route"></i> Rota Tercihinizi Seçin</h3>
-                            <p class="route-selector-subtitle">Sıradaki çağrı için optimize edilen rotalardan birini tıklayarak onaylayın.</p>
+                            <p class="route-selector-subtitle">Sıradaki çağrı için optimize edilen rotalardan birini
+                                tıklayarak onaylayın.</p>
                             <div id="route-options-list" class="route-options-list">
                                 <!-- Dinamik alternatif rotalar JS tarafından eklenecek -->
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Yolculuk Tamamlandı Özet Rapor Overlay Paneli -->
                     <div id="trip-summary-overlay" class="route-selector-overlay hidden" style="pointer-events: none;">
-                        <div class="route-selector-card" style="pointer-events: auto; border-color: var(--success); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 30px var(--success-glow);">
-                            <h3><i class="fa-solid fa-square-poll-horizontal" style="color: var(--success); font-size: 1.2rem;"></i> Yolculuk Özeti & Ücret Raporu</h3>
-                            <p class="route-selector-subtitle">Tüm yolcular hedeflerine ulaştırıldı. Dinamik paylaşımlı ücret kırılımı ve tasarruf detayları aşağıdadır.</p>
+                        <div class="route-selector-card"
+                            style="pointer-events: auto; border-color: var(--success); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 30px var(--success-glow);">
+                            <h3><i class="fa-solid fa-square-poll-horizontal"
+                                    style="color: var(--success); font-size: 1.2rem;"></i> Yolculuk Özeti & Ücret Raporu
+                            </h3>
+                            <p class="route-selector-subtitle">Tüm yolcular hedeflerine ulaştırıldı. Dinamik paylaşımlı
+                                ücret kırılımı ve tasarruf detayları aşağıdadır.</p>
                             <div id="trip-summary-customers-list" class="route-options-list">
                                 <!-- Dinamik yolcu raporları JS tarafından doldurulacak -->
                             </div>
-                            <button type="button" id="btn-close-summary" class="btn btn-accent btn-block" style="margin-top: 10px;">
+                            <button type="button" id="btn-close-summary" class="btn btn-accent btn-block"
+                                style="margin-top: 10px;">
                                 <i class="fa-solid fa-circle-check"></i> Raporu Kapat ve Devam Et
                             </button>
                         </div>
@@ -113,10 +120,10 @@
                     <div class="legend-item"><span class="legend-dot vehicle busy"></span> Meşgul Taksi</div>
                 </div>
             </section>
- 
+
             <!-- BOTTOM SECTION: KONTROL PANELİ & İSTATİSTİKLER (3 COLUMNS) -->
             <section class="controls-grid">
-                
+
                 <!-- HIZLI TALEP EKLEME FORMU -->
                 <div class="panel form-panel">
                     <div class="panel-header">
@@ -153,7 +160,8 @@
                         <button type="submit" class="btn btn-primary btn-block">
                             <i class="fa-solid fa-paper-plane"></i> Çağrı Talebi Gönder (Kuyruğa Ekle)
                         </button>
-                        <button type="button" id="btn-random-customer" class="btn btn-secondary btn-block" style="margin-top: 12px;">
+                        <button type="button" id="btn-random-customer" class="btn btn-secondary btn-block"
+                            style="margin-top: 12px;">
                             <i class="fa-solid fa-dice"></i> Rastgele Çağrı Talebi Gönder
                         </button>
                     </form>
@@ -177,26 +185,32 @@
                             </div>
                         </div>
                         <button id="btn-step" class="btn btn-accent btn-large btn-block" disabled>
-                            <i class="fa-solid fa-forward-step"></i> Sıradaki Çağrıyı İşle (Dijkstra Match)
+                            <i class="fa-solid fa-forward-step"></i> Sıradaki Çağrıyı İşle <!--(Dijkstra Match)-->
                         </button>
                     </div>
                     <!-- Canlı Sonuç Özeti -->
                     <div id="simulation-result" class="simulation-result hidden">
                         <div class="result-card">
                             <div class="result-header">
-                                <span class="match-badge"><i class="fa-solid fa-circle-check"></i> <span id="res-match-type">Eşleşme Bulundu</span></span>
+                                <span class="match-badge"><i class="fa-solid fa-circle-check"></i> <span
+                                        id="res-match-type">Eşleşme Bulundu</span></span>
                                 <span id="res-dist" class="distance-tag">0.0 km</span>
                             </div>
                             <div class="result-details">
                                 <p><strong>Yolcu 1:</strong> <span id="res-customer">-</span></p>
-                                <p id="res-shared-row" class="hidden"><strong>Yolcu 2 (Paylaşımlı):</strong> <span id="res-customer-2">-</span></p>
-                                <p id="res-shared-row-3" class="hidden"><strong>Yolcu 3 (Paylaşımlı):</strong> <span id="res-customer-3">-</span></p>
-                                <p><strong>Tahsis Edilen Araç:</strong> <span id="res-vehicle" class="neon-text">-</span></p>
-                                <p id="res-savings-row" class="hidden"><strong>Rota Tasarrufu:</strong> <span id="res-savings" style="color: var(--success); font-weight: bold;">-</span></p>
+                                <p id="res-shared-row" class="hidden"><strong>Yolcu 2 (Paylaşımlı):</strong> <span
+                                        id="res-customer-2">-</span></p>
+                                <p id="res-shared-row-3" class="hidden"><strong>Yolcu 3 (Paylaşımlı):</strong> <span
+                                        id="res-customer-3">-</span></p>
+                                <p><strong>Tahsis Edilen Araç:</strong> <span id="res-vehicle"
+                                        class="neon-text">-</span></p>
+                                <p id="res-savings-row" class="hidden"><strong>Rota Tasarrufu:</strong> <span
+                                        id="res-savings" style="color: var(--success); font-weight: bold;">-</span></p>
                                 <div class="route-display">
                                     <div class="route-segment" id="res-timeline-row">
                                         <span class="segment-label">Güzergah & Zaman Çizelgesi:</span>
-                                        <span id="res-timeline" class="route-path" style="font-weight: 600; color: var(--accent-light);">-</span>
+                                        <span id="res-timeline" class="route-path"
+                                            style="font-weight: 600; color: var(--accent-light);">-</span>
                                     </div>
                                     <div class="route-segment">
                                         <span class="segment-label">Alış Sokak Detayı:</span>
@@ -229,7 +243,7 @@
 
         <!-- FOOTER / LOGS / VEHICLES STATUS -->
         <footer class="dashboard-footer-grid">
-            
+
             <!-- AKTİF ARAÇLARIN DURUM TABLOSU -->
             <section class="panel vehicles-panel">
                 <div class="panel-header">
@@ -270,4 +284,5 @@
     <!-- Script imports -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
+
 </html>

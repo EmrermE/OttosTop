@@ -207,7 +207,7 @@ class TestTaxiSimulation(unittest.TestCase):
         self.manager.add_customer_to_queue(cust2)
 
         # Meydan -> Ortakoy solo mesafesini al (Dijkstra):
-        # Meydan -> Ciragan (1.2) -> Ortakoy (1.5) = 2.7 km. Solo Ücret = 27.0 dolar.
+        # Meydan -> Ciragan (1.2) -> Ortakoy (1.5) = 2.7 km. Solo Ücret = 13.5 dolar.
         # 34-TAK-01 Meydan'da olduğundan pickup mesafesi 0, seyahat mesafesi 2.7 km.
         result = self.manager.process_next_customer(selected_vehicle_id="34-TAK-01")
 
@@ -215,19 +215,19 @@ class TestTaxiSimulation(unittest.TestCase):
         self.assertEqual(result["type"], "shared")
         
         # Her iki yolcu da aynı yolu tamamen paylaştığı için:
-        # Ücret = (2.6 km * 10) / 2 = 13.0 dolar.
-        # Solo Ücret = 2.6 km * 10 = 26.0 dolar.
-        # Tasarruf = 26.0 - 13.0 = 13.0 dolar.
+        # Ücret = 25.0 + (2.6 km * 8.0) / 2 = 35.4 TL.
+        # Solo Ücret = 25.0 + 2.6 km * 8.0 = 45.8 TL.
+        # Tasarruf = 45.8 - 35.4 = 10.4 TL.
         u_cust = result["customer"]
         c_cust = result["customer_2"]
 
-        self.assertAlmostEqual(u_cust["fare"], 13.0)
-        self.assertAlmostEqual(u_cust["solo_fare"], 26.0)
-        self.assertAlmostEqual(u_cust["saving"], 13.0)
+        self.assertAlmostEqual(u_cust["fare"], 35.4)
+        self.assertAlmostEqual(u_cust["solo_fare"], 45.8)
+        self.assertAlmostEqual(u_cust["saving"], 10.4)
 
-        self.assertAlmostEqual(c_cust["fare"], 13.0)
-        self.assertAlmostEqual(c_cust["solo_fare"], 26.0)
-        self.assertAlmostEqual(c_cust["saving"], 13.0)
+        self.assertAlmostEqual(c_cust["fare"], 35.4)
+        self.assertAlmostEqual(c_cust["solo_fare"], 45.8)
+        self.assertAlmostEqual(c_cust["saving"], 10.4)
 
     def test_savings_maximizing_and_detour_compensation(self):
         """Uzatılan yol (detour) durumunda indirimlerin ve en az %15 tasarruf garantisinin uygulandığını doğrular."""
@@ -262,7 +262,7 @@ class TestTaxiSimulation(unittest.TestCase):
         # 34-TAK-02 Akaretler'den Carsi'ye yolcuyu almaya gitmek için 0.6 km seyahat eder (boş yol/pickup).
         # Yolcunun seyahati ise Carsi -> Meydan (0.4 km) sürer (aktif yol).
         # Boş yol muafiyeti sayesinde yolcu sadece 0.4 km aktif seyahat maliyetini ödemelidir!
-        # Ücret = 0.4 km * 10 = 4.0 dolar.
+        # Ücret = 0.4 km * 5 = 2.0 dolar.
         cust = Customer(71, "Kaya", "Carsi", "Meydan")
         self.manager.add_customer_to_queue(cust)
 
@@ -275,8 +275,9 @@ class TestTaxiSimulation(unittest.TestCase):
         self.assertEqual(result["trip"]["distance"], 0.4)   # Aktif seyahat mesafesi = 0.4 km
         
         # Kaya sadece aktif mesafeyi (0.4 km) öder, 0.6 km'lik boş yolu ödemez!
-        self.assertAlmostEqual(result["customer"]["fare"], 4.0)
-        self.assertAlmostEqual(result["customer"]["solo_fare"], 4.0)
+        # Ücret = 25.0 + 0.4 km * 8.0 = 28.2 TL.
+        self.assertAlmostEqual(result["customer"]["fare"], 28.2)
+        self.assertAlmostEqual(result["customer"]["solo_fare"], 28.2)
         self.assertAlmostEqual(result["customer"]["saving"], 0.0)
 
 

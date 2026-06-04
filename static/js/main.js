@@ -26,7 +26,26 @@ const NODE_COORDINATES = {
     "Dikilitas": { x: 420, y: 120 },
     "BAU": { x: 440, y: 340 },
     "EvlendirmeDairesi": { x: 380, y: 160 },
-    "Karanfilkoy": { x: 680, y: 150 }
+    "Karanfilkoy": { x: 680, y: 150 },
+    "Kabatas": { x: 160, y: 430 },
+    "Nisantasi": { x: 80, y: 200 },
+    "Fulya": { x: 200, y: 100 },
+    "Gayrettepe": { x: 380, y: 50 },
+    "Levent": { x: 550, y: 40 },
+    "Levazim": { x: 500, y: 110 },
+    "Ulus": { x: 740, y: 100 },
+    "Bebek": { x: 780, y: 220 },
+    "Kadikoy": { x: 700, y: 650 },
+    "Harem": { x: 670, y: 570 },
+    "Salacak": { x: 730, y: 520 },
+    "Uskudar": { x: 800, y: 480 },
+    "Kuzguncuk": { x: 880, y: 460 },
+    "Nakkastepe": { x: 920, y: 500 },
+    "Beylerbeyi": { x: 980, y: 440 },
+    "Cengelkoy": { x: 1060, y: 410 },
+    "Kandilli": { x: 1140, y: 380 },
+    "Camlica": { x: 950, y: 580 },
+    "Umraniye": { x: 1100, y: 550 }
 };
 
 // Duraklar arası eğrisel/kıvrımlı yol yatakları koordinat listesi
@@ -253,7 +272,7 @@ let systemState = {
 let activeAnimation = null; // { vehicleId, pickupRoute: [], tripRoute: [], progress: 0, phase: 'pickup'|'trip', stepCallback }
 
 // Zoom & Pan Kontrol Değişkenleri
-let zoomScale = 1.0;
+let zoomScale = 0.85;
 let panOffset = { x: 0, y: 0 };
 let isDraggingMap = false;
 let mapDragStart = { x: 0, y: 0 };
@@ -296,6 +315,21 @@ const resTripRoute = document.getElementById("res-trip-route");
 const resTimeline = document.getElementById("res-timeline");
 
 // Başlangıç Kurulumu
+// Haritayı merkeze yerleştiren fonksiyon
+function resetPanOffset() {
+    const refWidth = 1150;
+    const refHeight = 650;
+    const scaleX = (canvas.width * 0.95) / refWidth;
+    const scaleY = (canvas.height * 0.95) / refHeight;
+    const baseScale = Math.min(scaleX, scaleY);
+
+    const mapWidth = refWidth * baseScale * zoomScale;
+    const mapHeight = refHeight * baseScale * zoomScale;
+
+    panOffset.x = (canvas.width - mapWidth) / 2;
+    panOffset.y = (canvas.height - mapHeight) / 2;
+}
+
 window.addEventListener("load", () => {
     // Tema yükleme ve kontrolü
     const savedTheme = localStorage.getItem("theme");
@@ -305,8 +339,9 @@ window.addEventListener("load", () => {
     updateThemeUI();
 
     resizeCanvas();
+    resetPanOffset();
     fetchSystemStatus(true); // Durumu al ve dropdownları doldur
-    
+
     // Pencere boyutu değiştiğinde canvası yeniden ayarla
     window.addEventListener("resize", () => {
         resizeCanvas();
@@ -365,23 +400,23 @@ window.addEventListener("load", () => {
     // Mouse tekerleği ile cursor merkezli yakınlaşma/uzaklaşma (Zoom)
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
-        
+
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        
+
         const zoomIntensity = 0.08;
         const oldScale = zoomScale;
-        
+
         if (e.deltaY < 0) {
             zoomScale = Math.min(zoomScale + zoomIntensity, 3.0);
         } else {
             zoomScale = Math.max(zoomScale - zoomIntensity, 0.8);
         }
-        
+
         panOffset.x = mouseX - (mouseX - panOffset.x) * (zoomScale / oldScale);
         panOffset.y = mouseY - (mouseY - panOffset.y) * (zoomScale / oldScale);
-        
+
         clampPanOffset();
         drawMap();
     });
@@ -420,16 +455,16 @@ window.addEventListener("load", () => {
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             const newDist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (lastTouchDist > 0) {
                 const rect = canvas.getBoundingClientRect();
                 const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
                 const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-                
+
                 const oldScale = zoomScale;
                 const scaleFactor = newDist / lastTouchDist;
                 zoomScale = Math.max(0.8, Math.min(3.0, zoomScale * scaleFactor));
-                
+
                 panOffset.x = centerX - (centerX - panOffset.x) * (zoomScale / oldScale);
                 panOffset.y = centerY - (centerY - panOffset.y) * (zoomScale / oldScale);
                 clampPanOffset();
@@ -450,8 +485,8 @@ window.addEventListener("load", () => {
 
     // Çift tıklama ile zoom ve pan sıfırlama (Reset)
     canvas.addEventListener("dblclick", () => {
-        zoomScale = 1.0;
-        panOffset = { x: 0, y: 0 };
+        zoomScale = 0.85;
+        resetPanOffset();
         drawMap();
     });
 
@@ -459,7 +494,7 @@ window.addEventListener("load", () => {
     const btnZoomIn = document.getElementById("btn-zoom-in");
     const btnZoomOut = document.getElementById("btn-zoom-out");
     const btnZoomReset = document.getElementById("btn-zoom-reset");
-    
+
     if (btnZoomIn) {
         btnZoomIn.addEventListener("click", () => {
             zoomScale = Math.min(zoomScale + 0.15, 3.0);
@@ -476,8 +511,8 @@ window.addEventListener("load", () => {
     }
     if (btnZoomReset) {
         btnZoomReset.addEventListener("click", () => {
-            zoomScale = 1.0;
-            panOffset = { x: 0, y: 0 };
+            zoomScale = 0.85;
+            resetPanOffset();
             drawMap();
         });
     }
@@ -494,7 +529,11 @@ window.addEventListener("load", () => {
         btnCloseSummary.addEventListener("click", () => {
             const summaryOverlay = document.getElementById("trip-summary-overlay");
             if (summaryOverlay) summaryOverlay.classList.add("hidden");
-            
+
+            // Haritadan seçilen rotayı temizle
+            systemState.lastMatchedRoute = null;
+            drawMap();
+
             if (activeAnimation && activeAnimation.stepCallback) {
                 activeAnimation.stepCallback();
             }
@@ -523,13 +562,13 @@ async function fetchSystemStatus(fillDropdowns = false) {
     try {
         const response = await fetch("/api/status");
         const data = await response.json();
-        
+
         if (data.status === "success") {
             systemState.cityMap = data.city_map;
             systemState.vehicles = data.vehicles;
             systemState.waitingCustomers = data.waiting_customers;
             systemState.logs = data.logs;
-            
+
             updateUI(fillDropdowns);
             if (!activeAnimation) {
                 drawMap(systemState.lastMatchedRoute || { pickup: [], trip: [] });
@@ -556,9 +595,9 @@ function updateUI(fillDropdowns = false) {
     const vehicleSelect = document.getElementById("sim-vehicle-select");
     if (vehicleSelect) {
         const currentSelected = vehicleSelect.value;
-        
-        vehicleSelect.innerHTML = '<option value="any" style="background: var(--bg-panel); color: var(--text);">Herhangi Bir Taksi (En Yakın/Verimli)</option>';
-        
+
+        vehicleSelect.innerHTML = '<option value="any">Herhangi Bir Taksi (En Yakın/Verimli)</option>';
+
         if (systemState.vehicles && systemState.vehicles.length > 0) {
             const sortedVehicles = [...systemState.vehicles].sort((a, b) => a.id.localeCompare(b.id));
             sortedVehicles.forEach(vehicle => {
@@ -566,14 +605,12 @@ function updateUI(fillDropdowns = false) {
                 opt.value = vehicle.id;
                 const statusSuffix = vehicle.is_available ? "" : " [Meşgul]";
                 opt.textContent = `${vehicle.id} (${vehicle.current_location})${statusSuffix}`;
-                opt.style.background = "var(--bg-panel)";
-                opt.style.color = "var(--text)";
                 if (!vehicle.is_available) {
                     opt.style.opacity = "0.5";
                 }
                 vehicleSelect.appendChild(opt);
             });
-            
+
             // Restore selection if it exists in the updated list
             if ([...vehicleSelect.options].some(o => o.value === currentSelected)) {
                 vehicleSelect.value = currentSelected;
@@ -584,10 +621,10 @@ function updateUI(fillDropdowns = false) {
     // Dropdown listelerini doldur (Sadece ilk yüklemede veya sıfırlamada)
     if (fillDropdowns) {
         const sortedNodes = Object.keys(NODE_COORDINATES).sort();
-        
+
         custStartSelect.innerHTML = '<option value="">Seçiniz...</option>';
         custEndSelect.innerHTML = '<option value="">Seçiniz...</option>';
-        
+
         sortedNodes.forEach(node => {
             const opt1 = document.createElement("option");
             opt1.value = node;
@@ -626,7 +663,7 @@ function updateUI(fillDropdowns = false) {
         const tr = document.createElement("tr");
         const statusClass = vehicle.is_available ? "available" : "busy";
         const statusText = vehicle.is_available ? "Müsait" : "Meşgul";
-        
+
         tr.innerHTML = `
             <td><strong>${vehicle.id}</strong></td>
             <td><i class="fa-solid fa-location-dot" style="color: var(--accent); margin-right: 5px;"></i> ${vehicle.current_location}</td>
@@ -669,7 +706,7 @@ async function handleAddCustomer(e) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, current_location, destination })
         });
-        
+
         const data = await response.json();
         if (data.status === "success") {
             custNameInput.value = "";
@@ -712,7 +749,7 @@ async function handleAddRandomCustomer() {
                 destination: endNode
             })
         });
-        
+
         const data = await response.json();
         if (data.status === "success") {
             addLogLine(`Rastgele talep oluşturuldu: ${name} (${startNode} → ${endNode})`, "success");
@@ -730,7 +767,7 @@ async function handleSimulationStep() {
     if (activeAnimation) return;
 
     btnStep.setAttribute("disabled", "true");
-    
+
     try {
         const vehicleSelect = document.getElementById("sim-vehicle-select");
         const selectedVehicle = vehicleSelect ? vehicleSelect.value : "any";
@@ -744,7 +781,7 @@ async function handleSimulationStep() {
 
         if (data.status === "success") {
             const step = data.step_data;
-            
+
             // Sonuç panelini doldur
             resVehicle.textContent = step.vehicle.id;
             resDist.textContent = `${step.total_distance.toFixed(2)} km`;
@@ -757,12 +794,12 @@ async function handleSimulationStep() {
             resTimeline.textContent = getSimplifiedTimeline(step.pickup.route, step.trip.route, initialCustomers);
 
             if (step.type === "shared") {
-                resCustomer.textContent = `${step.customer.name} (Ücret: $${(step.customer.fare || 0).toFixed(2)})`;
-                resCustomer2.textContent = `${step.customer_2.name} (Ücret: $${(step.customer_2.fare || 0).toFixed(2)})`;
+                resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;
+                resCustomer2.textContent = `${step.customer_2.name} (Ücret: ${(step.customer_2.fare || 0).toFixed(2)} TL)`;
                 resSharedRow.classList.remove("hidden");
 
                 if (step.customer_3) {
-                    resCustomer3.textContent = `${step.customer_3.name} (Ücret: $${(step.customer_3.fare || 0).toFixed(2)})`;
+                    resCustomer3.textContent = `${step.customer_3.name} (Ücret: ${(step.customer_3.fare || 0).toFixed(2)} TL)`;
                     resSharedRow3.classList.remove("hidden");
                     resMatchType.textContent = "3'lü Paylaşımlı Eşleşme 🚗💨✨";
                 } else {
@@ -773,13 +810,13 @@ async function handleSimulationStep() {
                 resSavings.textContent = `${step.savings.toFixed(2)} km`;
                 resSavingsRow.classList.remove("hidden");
             } else {
-                resCustomer.textContent = `${step.customer.name} (Ücret: $${(step.customer.fare || 0).toFixed(2)})`;
+                resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;
                 resSharedRow.classList.add("hidden");
                 resSharedRow3.classList.add("hidden");
                 resMatchType.textContent = "Solo Eşleşme";
                 resSavingsRow.classList.add("hidden");
             }
-            
+
             simResultDiv.classList.remove("hidden");
 
             // Rota çizgilerini kalıcı çizim için kaydet
@@ -817,21 +854,21 @@ function findShortestPathJS(start, end) {
     let distances = {};
     let previous = {};
     let queue = [];
-    
+
     vertices.forEach(v => {
         distances[v] = Infinity;
         previous[v] = null;
         queue.push(v);
     });
     distances[start] = 0;
-    
+
     while (queue.length > 0) {
         queue.sort((a, b) => distances[a] - distances[b]);
         let u = queue.shift();
-        
+
         if (u === end) break;
         if (distances[u] === Infinity) break;
-        
+
         const adjacencies = systemState.cityMap[u].adjacencies || [];
         adjacencies.forEach(edge => {
             const v = edge.target;
@@ -842,7 +879,7 @@ function findShortestPathJS(start, end) {
             }
         });
     }
-    
+
     let path = [];
     let curr = end;
     while (curr !== null) {
@@ -858,7 +895,7 @@ function calculatePathDistance(path) {
     let distance = 0;
     for (let i = 0; i < path.length - 1; i++) {
         const u = path[i];
-        const v = path[i+1];
+        const v = path[i + 1];
         if (systemState.cityMap[u]) {
             const edge = systemState.cityMap[u].adjacencies.find(e => e.target === v);
             if (edge) {
@@ -880,13 +917,13 @@ function combineRoutes(pickup, trip) {
 
 function getSimplifiedTimeline(pickupRoute, tripRoute, customers) {
     if (!customers || customers.length === 0) return "-";
-    
+
     const fullPath = combineRoutes(pickupRoute, tripRoute);
-    
+
     let timelineEvents = [];
     let inCar = new Set();
     let pickedUp = new Set();
-    
+
     fullPath.forEach(node => {
         // 1. Dropoffs first
         let dropoffsHere = [];
@@ -903,7 +940,7 @@ function getSimplifiedTimeline(pickupRoute, tripRoute, customers) {
                 customers: dropoffsHere
             });
         }
-        
+
         // 2. Pickups second
         let pickupsHere = [];
         customers.forEach(c => {
@@ -921,10 +958,10 @@ function getSimplifiedTimeline(pickupRoute, tripRoute, customers) {
             });
         }
     });
-    
+
     let pickups = [];
     let dropoffs = [];
-    
+
     timelineEvents.forEach(evt => {
         const namesStr = evt.customers.map(c => c.name).join(", ");
         if (evt.type === 'pickup') {
@@ -933,11 +970,11 @@ function getSimplifiedTimeline(pickupRoute, tripRoute, customers) {
             dropoffs.push(`${evt.node} (${namesStr})`);
         }
     });
-    
+
     if (pickups.length === 0 && dropoffs.length === 0) {
         return "-";
     }
-    
+
     return `Alış: ${pickups.join(" + ")} ➔ İniş: ${dropoffs.join(" ➔ ")}`;
 }
 
@@ -945,26 +982,32 @@ function getSimplifiedTimeline(pickupRoute, tripRoute, customers) {
 let pendingStep = null;
 function showRouteSelector(step) {
     pendingStep = step;
-    
+
     const overlay = document.getElementById("route-selector-overlay");
     const optionsList = document.getElementById("route-options-list");
-    
+
     // Listeyi temizle
     optionsList.innerHTML = "";
     
+    // Fare liste dışına çıktığında ilk seçeneğin önizlemesine dön
+    optionsList.onmouseleave = () => {
+        const firstBtn = optionsList.children[0];
+        if (firstBtn) firstBtn.dispatchEvent(new Event("mouseenter"));
+    };
+
     const alternatives = step.trip_alternatives;
-    
+
     if (!alternatives || alternatives.length === 0) {
         // Alternatif bulunamadıysa doğrudan varsayılan animasyonla başla
         startRouteAnimation(step);
         return;
     }
-    
+
     const isLight = document.body.classList.contains("light-theme");
-    
+
     // Seçim panelini görünür yap
     overlay.classList.remove("hidden");
-    
+
     // Seçenekler listesini oluştur
     let selectorOptions = [];
     alternatives.forEach(alt => {
@@ -984,44 +1027,44 @@ function showRouteSelector(step) {
             score: alt.score
         });
     });
-    
+
     // Varsayılan olarak 0. rota önizlemede seçili gelsin
     let activeIdx = 0;
-    
+
     // Haritayı güncelleyen önizleme yardımcısı
     const updatePreview = (idx) => {
         const opt = selectorOptions[idx];
-        
+
         // Collect all alternative paths to draw in orange
         let allAlts = [];
         selectorOptions.forEach(o => {
             allAlts.push(o.pickupRoute);
             allAlts.push(o.tripRoute);
         });
-        
+
         drawMap({
             pickup: opt.pickupRoute,
             trip: opt.tripRoute,
             tripAlternatives: allAlts
         });
     };
-    
+
     // Başlangıç önizlemesi çizdir
     updatePreview(activeIdx);
-    
+
     // Her bir alternatif rota seçeneği için buton oluştur
     selectorOptions.forEach((opt, idx) => {
         const btn = document.createElement("div");
         btn.className = "route-option-btn";
-        
+
         if (idx === activeIdx) {
             btn.style.borderColor = "var(--accent)";
             btn.style.background = isLight ? "rgba(94, 92, 230, 0.05)" : "rgba(139, 92, 246, 0.08)";
         }
-        
+
         const timeline = getSimplifiedTimeline(opt.pickupRoute, opt.tripRoute, opt.customers);
-        const faresList = opt.customers.map(c => `${c.name}: $${(c.fare || 0).toFixed(2)}`).join(", ");
-        
+        const faresList = opt.customers.map(c => `${c.name}: ${(c.fare || 0).toFixed(2)} TL`).join(", ");
+
         btn.innerHTML = `
             <div class="route-option-header" style="align-items: flex-start;">
                 <span class="route-option-badge ${opt.badgeClass}">${opt.badgeText}</span>
@@ -1040,7 +1083,7 @@ function showRouteSelector(step) {
                 <i class="fa-solid fa-users"></i> Hizmet Verilecek: <strong>${opt.passengerCount} Yolcu</strong> <span style="color: var(--text-muted);">(${faresList})</span>
             </div>
         `;
-        
+
         // Fare üzerine geldiğinde o rotayı haritada kalın yeşil çizgiyle önizle, diğer alternatifleri turuncu çiz
         btn.addEventListener("mouseenter", () => {
             document.querySelectorAll(".route-option-btn").forEach((b) => {
@@ -1055,11 +1098,11 @@ function showRouteSelector(step) {
             btn.style.background = isLight ? "rgba(94, 92, 230, 0.08)" : "rgba(139, 92, 246, 0.12)";
             updatePreview(idx);
         });
-        
+
         // Tıklandığında seçilen rotayı onayla ve animasyonu başlat
         btn.addEventListener("click", () => {
             overlay.classList.add("hidden");
-            
+
             // Seçilen rotayı seyahat ve alış rotası olarak ata
             step.pickup = { route: opt.pickupRoute, distance: opt.pickupDistance };
             step.trip = { route: opt.tripRoute, distance: opt.tripDistance };
@@ -1067,7 +1110,7 @@ function showRouteSelector(step) {
             step.type = opt.isShared ? "shared" : "solo";
             step.savings = opt.savings;
             step.score = opt.score;
-            
+
             // Yolcuları güncelle
             step.customer = opt.customers[0];
             if (opt.customers.length >= 2) {
@@ -1080,60 +1123,54 @@ function showRouteSelector(step) {
             } else {
                 delete step.customer_3;
             }
-            
+
             // Sonuç panelini tam olarak güncelle
             resVehicle.textContent = step.vehicle.id;
             resDist.textContent = `${step.total_distance.toFixed(2)} km`;
             resPickupRoute.textContent = step.pickup.route.join(" → ");
             resTripRoute.textContent = step.trip.route.join(" → ");
-            
+
             // Timeline metnini oluştur ve ata
             const timelineText = getSimplifiedTimeline(step.pickup.route, step.trip.route, opt.customers);
             resTimeline.textContent = timelineText;
-            
+
             if (step.type === "shared") {
-                resCustomer.textContent = `${step.customer.name} (Ücret: $${(step.customer.fare || 0).toFixed(2)})`;
-                resCustomer2.textContent = `${step.customer_2.name} (Ücret: $${(step.customer_2.fare || 0).toFixed(2)})`;
+                resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;
+                resCustomer2.textContent = `${step.customer_2.name} (Ücret: ${(step.customer_2.fare || 0).toFixed(2)} TL)`;
                 resSharedRow.classList.remove("hidden");
-                
+
                 if (step.customer_3) {
-                    resCustomer3.textContent = `${step.customer_3.name} (Ücret: $${(step.customer_3.fare || 0).toFixed(2)})`;
+                    resCustomer3.textContent = `${step.customer_3.name} (Ücret: ${(step.customer_3.fare || 0).toFixed(2)} TL)`;
                     resSharedRow3.classList.remove("hidden");
                     resMatchType.textContent = "3'lü Paylaşımlı Eşleşme 🚗💨✨";
                 } else {
                     resSharedRow3.classList.add("hidden");
                     resMatchType.textContent = "2'li Paylaşımlı Eşleşme 🚗💨";
                 }
-                
+
                 resSavings.textContent = `${step.savings.toFixed(2)} km`;
                 resSavingsRow.classList.remove("hidden");
             } else {
-                resCustomer.textContent = `${step.customer.name} (Ücret: $${(step.customer.fare || 0).toFixed(2)})`;
+                resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;
                 resSharedRow.classList.add("hidden");
                 resSharedRow3.classList.add("hidden");
                 resMatchType.textContent = "Solo Eşleşme";
                 resSavingsRow.classList.add("hidden");
             }
-            
+
             // Son karar verilen rotayı kalıcı çizim için kaydet
-            let allAlts = [];
-            selectorOptions.forEach(o => {
-                allAlts.push(o.pickupRoute);
-                allAlts.push(o.tripRoute);
-            });
-            
             systemState.lastMatchedRoute = {
                 pickup: opt.pickupRoute,
                 trip: opt.tripRoute,
-                tripAlternatives: allAlts,
+                tripAlternatives: [], // Animasyon esnasında sadece seçilen rotayı göster
                 type: step.type
             };
-            
+
             // Animasyonu tetikle!
             startRouteAnimation(step);
             pendingStep = null;
         });
-        
+
         optionsList.appendChild(btn);
     });
 }
@@ -1141,14 +1178,14 @@ function showRouteSelector(step) {
 // Aktif Taksi Seyahatini ve Animasyonu İptal Etme / Durdurma
 async function handleStopAnimation() {
     if (!activeAnimation) return;
-    
+
     const confirmStop = confirm("Taksi seyahatini durdurup iptal etmek istediğinize emin misiniz? Yolcular bekleme kuyruğuna geri alınacaktır.");
     if (!confirmStop) return;
-    
+
     // 1. Gerekli parametreleri topla
     const vehicleId = activeAnimation.id;
     const startLocation = activeAnimation.pickupRoute[0] || "Meydan";
-    
+
     let customers = [];
     if (activeAnimation.customerLoc) {
         customers.push({
@@ -1174,7 +1211,7 @@ async function handleStopAnimation() {
             destination: activeAnimation.destLoc3
         });
     }
-    
+
     // 2. Animasyonu sıfırla ve gizle
     activeAnimation = null;
     mapOverlay.classList.add("hidden");
@@ -1182,7 +1219,7 @@ async function handleStopAnimation() {
     systemState.lastMatchedRoute = null;
     const pill = document.getElementById("active-passengers-pill");
     if (pill) pill.classList.add("hidden");
-    
+
     // 3. Sunucuya POST isteği göndererek seyahati iptal et
     try {
         const response = await fetch("/api/simulation/revert", {
@@ -1194,7 +1231,7 @@ async function handleStopAnimation() {
                 customers: customers
             })
         });
-        
+
         const data = await response.json();
         if (data.status === "success") {
             addLogLine(`İPTAL BAŞARILI: ${vehicleId} taksisinin seyahati durduruldu ve durumlar başarıyla geri alındı.`, "success");
@@ -1205,7 +1242,7 @@ async function handleStopAnimation() {
         console.error("Seyahat iptal edilirken hata:", error);
         addLogLine("HATA: Seyahat iptali sunucuya iletilemedi.", "error");
     }
-    
+
     // 4. Sistem durumunu ve haritayı yeniden yükle
     fetchSystemStatus(true);
 }
@@ -1213,13 +1250,14 @@ async function handleStopAnimation() {
 // Sistem Sıfırlama
 async function handleResetSystem() {
     if (!confirm("Sistemi sıfırlamak istediğinize emin misiniz? Tüm kuyruk temizlenecek ve araçlar başlangıç noktalarına dönecektir.")) return;
-    
+
     try {
         const response = await fetch("/api/reset", { method: "POST" });
         const data = await response.json();
         if (data.status === "success") {
             simResultDiv.classList.add("hidden");
             activeAnimation = null;
+            resetPanOffset();
             systemState.lastMatchedRoute = null;
             systemState.randomCallCount = 0;
             mapOverlay.classList.add("hidden");
@@ -1286,7 +1324,7 @@ const THEME_COLORS = {
 };
 
 // Haritayı Çizme Fonksiyonu
-function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = null) {
+function drawMap(highlightedRoutes = systemState.lastMatchedRoute || { pickup: [], trip: [] }, animVehicle = null) {
     const isLight = document.body.classList.contains("light-theme");
     const theme = isLight ? THEME_COLORS.light : THEME_COLORS.dark;
     const scale = getMapScaleFactors();
@@ -1303,46 +1341,68 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
     ctx.fillStyle = waveGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. ADIM: Kara Parçası (Land) Çokgeni — Kıyı çizgisinin üstünde kalan alan
+    // 2. ADIM: Kara Parçası (Land) Çokgenleri — Kıyı çizgilerinin üstünde ve altında kalan alanlar
     // Kıyı hattı referans koordinatları (800x600 grid üzerinde)
     const coastlinePoints = [
+        { x: -10000, y: 480 },
         { x: 180, y: 480 },
         { x: 210, y: 480 },
         { x: 380, y: 380 },
         { x: 520, y: 400 },
         { x: 670, y: 340 },
-        { x: 800, y: 350 }
+        { x: 800, y: 350 },
+        { x: 1150, y: 240 },
+        { x: 20000, y: 240 }
     ];
 
-    // Kara çokgeni: Kıyı çizgisinin üst kısmını + canvasın tüm üst bölgelerini kapsar
-    // Büyük sınırlar kullanarak pan/zoom yapıldığında bile karanın tamamen kapanmasını sağlıyoruz
+    const asianCoastlinePoints = [
+        { x: -10000, y: 600 },
+        { x: 350, y: 600 },
+        { x: 550, y: 500 },
+        { x: 700, y: 470 },
+        { x: 820, y: 420 },
+        { x: 920, y: 390 },
+        { x: 1150, y: 320 },
+        { x: 20000, y: 320 }
+    ];
+
+    // Kara çokgeni: Kıyı çizgisinin üst kısmını + canvasın tüm üst bölgelerini kapsar (Avrupa)
     ctx.fillStyle = theme.land;
     ctx.beginPath();
-    // Sol üst köşeden başla (çok geniş alan)
-    const extL = -500, extR = 1300, extT = -500;
+    const extL = -10000, extR = 20000, extT = -10000, extB = 20000;
     ctx.moveTo(extL * scale.x + scale.offsetX, extT * scale.y + scale.offsetY);
     ctx.lineTo(extR * scale.x + scale.offsetX, extT * scale.y + scale.offsetY);
-    // Sağ üst köşeden sağ kıyı noktasına in
     ctx.lineTo(extR * scale.x + scale.offsetX, coastlinePoints[coastlinePoints.length - 1].y * scale.y + scale.offsetY);
-    // Kıyı hattını ters sırayla takip et (sağdan sola)
     for (let i = coastlinePoints.length - 1; i >= 0; i--) {
         const pt = coastlinePoints[i];
         ctx.lineTo(pt.x * scale.x + scale.offsetX, pt.y * scale.y + scale.offsetY);
     }
-    // Sol kıyı noktasından sol alt köşeye ve başa dön
     ctx.lineTo(extL * scale.x + scale.offsetX, coastlinePoints[0].y * scale.y + scale.offsetY);
     ctx.closePath();
     ctx.fill();
 
-    // 3. ADIM: İnce Koordinat Izgarası (Premium Coordinate Grid) — Sadece kara üzerinde
+    // Asya Yakası Kara Parçası Çokgeni — Kıyı çizgisinin altında kalan alan (Asya)
+    ctx.beginPath();
+    ctx.moveTo(extR * scale.x + scale.offsetX, extB * scale.y + scale.offsetY);
+    ctx.lineTo(extL * scale.x + scale.offsetX, extB * scale.y + scale.offsetY);
+    ctx.lineTo(extL * scale.x + scale.offsetX, asianCoastlinePoints[0].y * scale.y + scale.offsetY);
+    for (let i = 0; i < asianCoastlinePoints.length; i++) {
+        const pt = asianCoastlinePoints[i];
+        ctx.lineTo(pt.x * scale.x + scale.offsetX, pt.y * scale.y + scale.offsetY);
+    }
+    ctx.lineTo(extR * scale.x + scale.offsetX, asianCoastlinePoints[asianCoastlinePoints.length - 1].y * scale.y + scale.offsetY);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. ADIM: İnce Koordinat Izgarası (Premium Coordinate Grid) — Tüm ekran üzerinde
     ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.015)" : "rgba(255, 255, 255, 0.015)";
     ctx.lineWidth = 1;
     const gridSpacing = 50;
-    
+
     // Zoom/Pan ile birlikte hareket eden ızgara çizgileri
     const startX = panOffset.x % (gridSpacing * scale.x);
     const startY = panOffset.y % (gridSpacing * scale.y);
-    
+
     for (let x = startX; x < canvas.width; x += gridSpacing * scale.x) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -1406,6 +1466,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
     });
 
     // 5. ADIM: Kıyı Çizgisi Parlaması (Coastline Glow Effect)
+    // Kıyı Çizgisi Parlaması (Avrupa)
     ctx.beginPath();
     coastlinePoints.forEach((pt, i) => {
         const px = pt.x * scale.x + scale.offsetX;
@@ -1416,16 +1477,37 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = theme.coast;
     ctx.stroke();
-    
-    // İkinci ince parlak kıyı çizgisi
+
+    // İkinci ince parlak kıyı çizgisi (Avrupa)
+    ctx.save();
     ctx.lineWidth = 1;
     ctx.strokeStyle = isLight ? "rgba(14, 165, 233, 0.15)" : "rgba(56, 189, 248, 0.08)";
     ctx.stroke();
+    ctx.restore();
+
+    // Kıyı Çizgisi Parlaması (Asya)
+    ctx.beginPath();
+    asianCoastlinePoints.forEach((pt, i) => {
+        const px = pt.x * scale.x + scale.offsetX;
+        const py = pt.y * scale.y + scale.offsetY;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    });
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = theme.coast;
+    ctx.stroke();
+
+    // İkinci ince parlak kıyı çizgisi (Asya)
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = isLight ? "rgba(14, 165, 233, 0.15)" : "rgba(56, 189, 248, 0.08)";
+    ctx.stroke();
+    ctx.restore();
 
     // 5. ADIM: Asma Köprü ve Alt Yapı Görselleştirmeleri (Ortaköy-Üsküdar & Eminönü-Karaköy)
     // 15 Temmuz Şehitler Köprüsü (Bosphorus Bridge)
     const bp1 = NODE_COORDINATES["Ortakoy"];
-    const bp2 = { x: 800, y: 580 }; // Güneydoğuya uzanan gerçek yön!
+    const bp2 = NODE_COORDINATES["Uskudar"];
     if (bp1 && bp2) {
         const bx1 = bp1.x * scale.x + scale.offsetX;
         const by1 = bp1.y * scale.y + scale.offsetY;
@@ -1474,7 +1556,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
         const towerY2 = by1 + (by2 - by1) * 0.7;
 
         // Kule çizimi
-        [ {x: towerX1, y: towerY1}, {x: towerX2, y: towerY2} ].forEach((tower) => {
+        [{ x: towerX1, y: towerY1 }, { x: towerX2, y: towerY2 }].forEach((tower) => {
             // Kulenin taban ayağı (Suya inen derin kısım)
             ctx.beginPath();
             ctx.moveTo(tower.x, tower.y + 15 * scale.y);
@@ -1535,17 +1617,17 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
                 const nt = t / 0.3;
                 cx = bx1 + (towerX1 - bx1) * nt;
                 const cy1 = by1 - 15 * scale.y;
-                cy = (1-nt)*(1-nt)*by1 + 2*(1-nt)*nt*cy1 + nt*nt*(towerY1 - 28 * scale.y);
+                cy = (1 - nt) * (1 - nt) * by1 + 2 * (1 - nt) * nt * cy1 + nt * nt * (towerY1 - 28 * scale.y);
             } else if (t < 0.7) {
                 const nt = (t - 0.3) / 0.4;
                 cx = towerX1 + (towerX2 - towerX1) * nt;
                 const cy1 = (towerY1 + towerY2) / 2 - 5 * scale.y;
-                cy = (1-nt)*(1-nt)*(towerY1 - 28 * scale.y) + 2*(1-nt)*nt*cy1 + nt*nt*(towerY2 - 28 * scale.y);
+                cy = (1 - nt) * (1 - nt) * (towerY1 - 28 * scale.y) + 2 * (1 - nt) * nt * cy1 + nt * nt * (towerY2 - 28 * scale.y);
             } else {
                 const nt = (t - 0.7) / 0.3;
                 cx = towerX2 + (bx2 - towerX2) * nt;
                 const cy1 = towerY2 - 15 * scale.y;
-                cy = (1-nt)*(1-nt)*(towerY2 - 28 * scale.y) + 2*(1-nt)*nt*cy1 + nt*nt*by2;
+                cy = (1 - nt) * (1 - nt) * (towerY2 - 28 * scale.y) + 2 * (1 - nt) * nt * cy1 + nt * nt * by2;
             }
 
             ctx.beginPath();
@@ -1625,7 +1707,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
     // Pusula Gülü (Sağ Üst Köşe - Minimalist Kuzey Oku)
     const cx = canvas.width - 40;
     const cy = 40;
-    
+
     ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.15)" : "rgba(255, 255, 255, 0.15)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1665,9 +1747,19 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
         { text: "DİKİLİTAŞ", x: 460, y: 100, size: 8, isWater: false },
         { text: "TURKALİ", x: 360, y: 180, size: 8, isWater: false },
         { text: "BALMUMCU", x: 630, y: 80, size: 9, isWater: false },
-        
+        { text: "KABATAŞ", x: 160, y: 490, size: 8, isWater: false },
+        { text: "NİŞANTAŞI", x: 80, y: 225, size: 8, isWater: false },
+        { text: "LEVENT", x: 550, y: 70, size: 9, isWater: false },
+        { text: "ULUS", x: 740, y: 120, size: 9, isWater: false },
+        { text: "BEBEK", x: 780, y: 240, size: 9, isWater: false },
+        { text: "ÜSKÜDAR", x: 810, y: 505, size: 9, isWater: false },
+        { text: "KADIKÖY", x: 740, y: 575, size: 9, isWater: false },
+        { text: "KUZGUNCUK", x: 850, y: 470, size: 8, isWater: false },
+        { text: "NAKKAŞTEPE", x: 850, y: 395, size: 8, isWater: false },
+        { text: "BEYLERBEYI", x: 890, y: 430, size: 8, isWater: false },
+
         // Boğaz ve Deniz Etiketleri
-        { text: "İSTANBUL BOĞAZI", x: 550, y: 500, size: 12, isWater: true, rotation: -Math.PI / 8 },
+        { text: "İSTANBUL BOĞAZI", x: 520, y: 450, size: 12, isWater: true, rotation: -Math.PI / 8 },
         { text: "YILDIZ PARKI", x: 580, y: 260, size: 10, isWater: false, isForest: true }
     ];
 
@@ -1704,7 +1796,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
     ctx.lineJoin = "round";
     ctx.lineWidth = isLight ? 8 : 10;
     ctx.strokeStyle = isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.08)";
-    
+
     let drawnEdges = new Set();
     for (const sourceName in systemState.cityMap) {
         systemState.cityMap[sourceName].adjacencies.forEach(edge => {
@@ -1712,7 +1804,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
             const edgeKey = [sourceName, targetName].sort().join("-");
             if (drawnEdges.has(edgeKey)) return;
             drawnEdges.add(edgeKey);
-            
+
             const points = getRoadPoints(sourceName, targetName);
             ctx.beginPath();
             points.forEach((pt, idx) => {
@@ -1736,7 +1828,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
 
             let isPickupEdge = isEdgeInPath(sourceName, targetName, highlightedRoutes.pickup);
             let isTripEdge = isEdgeInPath(sourceName, targetName, highlightedRoutes.trip);
-            
+
             let isAltEdge = false;
             if (highlightedRoutes.tripAlternatives) {
                 highlightedRoutes.tripAlternatives.forEach(alt => {
@@ -1847,7 +1939,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
                 // Eğer bu yolcu aktif olarak taşınıyorsa ve yolculuk aşamasına (trip) geçildiyse VEYA alım durağında alınma eventi tetiklendiyse, highlight kalksın
                 if (activeAnimation) {
                     if (activeAnimation.phase === 'trip' || (activeAnimation.triggeredEvents && activeAnimation.triggeredEvents.has('pickup-' + nodeName))) {
-                        if (cust.current_location === activeAnimation.customerLoc || 
+                        if (cust.current_location === activeAnimation.customerLoc ||
                             (activeAnimation.customerLoc2 && cust.current_location === activeAnimation.customerLoc2) ||
                             (activeAnimation.customerLoc3 && cust.current_location === activeAnimation.customerLoc3)) {
                             return false;
@@ -1858,7 +1950,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
             });
         }
         if (activeAnimation && activeAnimation.phase === 'pickup') {
-            if (nodeName === activeAnimation.customerLoc || 
+            if (nodeName === activeAnimation.customerLoc ||
                 (activeAnimation.customerLoc2 && nodeName === activeAnimation.customerLoc2) ||
                 (activeAnimation.customerLoc3 && nodeName === activeAnimation.customerLoc3)) {
                 // Eğer alım eventi henüz tetiklenmediyse highlight var
@@ -1950,12 +2042,12 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
         if (coord) {
             const nx = coord.x * scale.x + scale.offsetX;
             const ny = coord.y * scale.y + scale.offsetY;
-            
+
             ctx.save();
             ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
             ctx.shadowBlur = 10;
             ctx.shadowOffsetY = 4;
-            
+
             const text = popup.text;
             ctx.font = "bold 12px 'Space Grotesk', system-ui";
             const textWidth = ctx.measureText(text).width;
@@ -1965,7 +2057,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
             const bubbleH = 28;
             const bubbleX = nx - bubbleW / 2;
             const bubbleY = ny - 45; // 45px above node
-            
+
             // Draw bubble body
             ctx.beginPath();
             ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, 6);
@@ -1974,7 +2066,7 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
             ctx.lineWidth = 1.5;
             ctx.fill();
             ctx.stroke();
-            
+
             // Draw bubble pointer (downward triangle)
             ctx.beginPath();
             ctx.moveTo(nx - 6, bubbleY + bubbleH);
@@ -1990,9 +2082,9 @@ function drawMap(highlightedRoutes = { pickup: [], trip: [] }, animVehicle = nul
             ctx.lineTo(nx, bubbleY + bubbleH + 6);
             ctx.lineTo(nx + 6, bubbleY + bubbleH);
             ctx.stroke();
-            
+
             ctx.restore();
-            
+
             // Draw text
             ctx.fillStyle = isLight ? "#1d1d1f" : "#ffffff";
             ctx.textAlign = "center";
@@ -2020,20 +2112,20 @@ function drawVehicleIcon(x, y, plate, isAvailable, isAnimating = false, angle = 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
-        
+
         ctx.beginPath();
         ctx.moveTo(size + 4, 0);
         ctx.lineTo(-size, -size * 0.8);
         ctx.lineTo(-size * 0.5, 0);
         ctx.lineTo(-size, size * 0.8);
         ctx.closePath();
-        
+
         ctx.fillStyle = "#f59e0b"; // GPS yellow
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
-        
+
         ctx.restore();
     } else {
         ctx.beginPath();
@@ -2053,60 +2145,53 @@ function drawVehicleIcon(x, y, plate, isAvailable, isAnimating = false, angle = 
 
 // Pan Sınırlandırma Fonksiyonu - Haritanın ekran dışına sürüklenmesini önler
 function clampPanOffset() {
-    const refWidth = 800;
-    const refHeight = 600;
+    const refWidth = 1150;
+    const refHeight = 650;
     const scaleX = (canvas.width * 0.95) / refWidth;
     const scaleY = (canvas.height * 0.95) / refHeight;
     const baseScale = Math.min(scaleX, scaleY);
-    
+
     const mapWidth = refWidth * baseScale * zoomScale;
     const mapHeight = refHeight * baseScale * zoomScale;
-    
-    // Haritanın en az %40'ı her zaman ekranda kalsın
-    const marginX = canvas.width * 0.4;
-    const marginY = canvas.height * 0.4;
-    
-    const minPanX = -(mapWidth - marginX);
-    const maxPanX = canvas.width - marginX;
-    const minPanY = -(mapHeight - marginY);
-    const maxPanY = canvas.height - marginY;
-    
-    panOffset.x = Math.max(minPanX, Math.min(maxPanX, panOffset.x));
-    panOffset.y = Math.max(minPanY, Math.min(maxPanY, panOffset.y));
+
+    // Yatay Sınırlandırma (Akıllı Kenetleme)
+    if (mapWidth > canvas.width) {
+        panOffset.x = Math.max(canvas.width - mapWidth, Math.min(0, panOffset.x));
+    } else {
+        panOffset.x = (canvas.width - mapWidth) / 2;
+    }
+
+    // Dikey Sınırlandırma (Akıllı Kenetleme)
+    if (mapHeight > canvas.height) {
+        panOffset.y = Math.max(canvas.height - mapHeight, Math.min(0, panOffset.y));
+    } else {
+        panOffset.y = (canvas.height - mapHeight) / 2;
+    }
 }
 
 // Koordinat Ölçeklendirme Faktörleri (En-Boy Oranını Koruyan Responsive Uyum ve Zoom/Pan Desteği)
 function getMapScaleFactors() {
-    // Koordinatlar 800x600 piksel referans alınarak yazılmıştır.
-    const refWidth = 800;
-    const refHeight = 600;
+    // Koordinatlar 1150x650 piksel referans alınarak yazılmıştır.
+    const refWidth = 1150;
+    const refHeight = 650;
 
     // Canvas alanına sığdırmak için ideal taban ölçek hesabı (Kenarlardan %2.5 boşluk bırakarak)
     const scaleX = (canvas.width * 0.95) / refWidth;
     const scaleY = (canvas.height * 0.95) / refHeight;
     const baseScale = Math.min(scaleX, scaleY);
 
-    // Taban ortalama offset hesabı
-    const baseOffsetX = (canvas.width - refWidth * baseScale) / 2;
-    const baseOffsetY = (canvas.height - refHeight * baseScale) / 2;
-
     // Zoom ve Pan katsayılarının taban değerlerle birleştirilmesi
     const finalScaleX = baseScale * zoomScale;
     const finalScaleY = baseScale * zoomScale;
 
-    // Akıllı merkezleme: Yakınlaştırma (zoomScale) yapıldığında odak noktasının korunması için
-    // taban offset değerlerini de ölçeklendiriyoruz ve kullanıcının pan değerlerini ekliyoruz.
-    const finalOffsetX = baseOffsetX + (canvas.width / 2 - baseOffsetX) * (1 - zoomScale) + panOffset.x;
-    const finalOffsetY = baseOffsetY + (canvas.height / 2 - baseOffsetY) * (1 - zoomScale) + panOffset.y;
-
-    return { x: finalScaleX, y: finalScaleY, offsetX: finalOffsetX, offsetY: finalOffsetY };
+    return { x: finalScaleX, y: finalScaleY, offsetX: panOffset.x, offsetY: panOffset.y };
 }
 
 // Bir kenarın rotanın içinde olup olmadığını doğrular
 function isEdgeInPath(u, v, path) {
     if (!path || path.length < 2) return false;
     for (let i = 0; i < path.length - 1; i++) {
-        if ((path[i] === u && path[i+1] === v) || (path[i] === v && path[i+1] === u)) {
+        if ((path[i] === u && path[i + 1] === v) || (path[i] === v && path[i + 1] === u)) {
             return true;
         }
     }
@@ -2118,7 +2203,7 @@ function updatePassengersPill(passengersSet) {
     const pill = document.getElementById("active-passengers-pill");
     const list = document.getElementById("active-passengers-list");
     if (!pill || !list) return;
-    
+
     if (!passengersSet || passengersSet.size === 0) {
         list.textContent = "Boş";
     } else {
@@ -2130,18 +2215,18 @@ function startRouteAnimation(step) {
     const pickupRoute = step.pickup.route;
     const tripRoute = step.trip.route;
     const fullPath = combineRoutes(pickupRoute, tripRoute);
-    
+
     // Build a chronological list of events along the unified path
     const eventsPerIndex = {}; // index i -> { pickups: [], dropoffs: [] }
-    
+
     const customers = [];
     if (step.customer) customers.push(step.customer);
     if (step.customer_2) customers.push(step.customer_2);
     if (step.customer_3) customers.push(step.customer_3);
-    
+
     let inCar = new Set();
     let pickedUp = new Set();
-    
+
     fullPath.forEach((node, i) => {
         let dropoffs = [];
         customers.forEach(c => {
@@ -2150,7 +2235,7 @@ function startRouteAnimation(step) {
                 inCar.delete(c.id);
             }
         });
-        
+
         let pickups = [];
         customers.forEach(c => {
             if (!pickedUp.has(c.id) && c.current_location === node) {
@@ -2159,7 +2244,7 @@ function startRouteAnimation(step) {
                 inCar.add(c.id);
             }
         });
-        
+
         if (pickups.length > 0 || dropoffs.length > 0) {
             eventsPerIndex[i] = {
                 pickups: pickups,
@@ -2167,14 +2252,14 @@ function startRouteAnimation(step) {
             };
         }
     });
-    
+
     let lastPickupIdx = 0;
     for (let i = 0; i < fullPath.length; i++) {
         if (eventsPerIndex[i] && eventsPerIndex[i].pickups.length > 0) {
             lastPickupIdx = i;
         }
     }
-    
+
     let startAngle = 0;
     if (fullPath.length >= 2) {
         const n0 = NODE_COORDINATES[fullPath[0]];
@@ -2183,14 +2268,14 @@ function startRouteAnimation(step) {
             startAngle = Math.atan2(n1.y - n0.y, n1.x - n0.x);
         }
     }
-    
+
     activeAnimation = {
         id: step.vehicle.id,
         pickupRoute: pickupRoute,
         tripRoute: tripRoute,
         fullPath: fullPath,
-        tripAlternatives: (systemState.lastMatchedRoute && systemState.lastMatchedRoute.tripAlternatives) 
-            ? systemState.lastMatchedRoute.tripAlternatives 
+        tripAlternatives: (systemState.lastMatchedRoute && systemState.lastMatchedRoute.tripAlternatives)
+            ? systemState.lastMatchedRoute.tripAlternatives
             : step.trip_alternatives,
         customerLoc: step.customer.current_location,
         destLoc: step.customer.destination,
@@ -2228,7 +2313,7 @@ function startRouteAnimation(step) {
     }
 
     mapOverlay.classList.remove("hidden");
-    
+
     if (step.type === "shared") {
         overlayTitle.innerHTML = `<i class="fa-solid fa-people-arrows overlay-icon"></i> Paylaşımlı Rota Bulundu`;
         if (step.customer_3) {
@@ -2330,18 +2415,18 @@ function animateStep() {
     // Check if we are physically close to the next node (segmentIndex + 1)
     const nextNodeIdx = segmentIndex + 1;
     const nextNodeName = fullPath[nextNodeIdx];
-    
+
     if (nextNodeName && !activeAnimation.triggeredEvents.has(nextNodeIdx)) {
         if (activeAnimation.eventsPerIndex[nextNodeIdx]) {
             const nodeCoord = NODE_COORDINATES[nextNodeName];
             if (nodeCoord) {
                 const nx = nodeCoord.x * scale.x + scale.offsetX;
                 const ny = nodeCoord.y * scale.y + scale.offsetY;
-                
+
                 const dx = currentX - nx;
                 const dy = currentY - ny;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                
+
                 if (dist < 15) {
                     currentX = nx;
                     currentY = ny;
@@ -2384,24 +2469,24 @@ function animateStep() {
 // Bir Duraktaki Tüm Biniş/İniş Eylemlerini Sırayla Tetikler ve Pop-up Gösterir
 function triggerEventAtIndex(idx, nodeName, cx, cy) {
     if (!activeAnimation) return;
-    
+
     activeAnimation.isPaused = true;
     activeAnimation.triggeredEvents.add(idx);
-    
+
     const events = activeAnimation.eventsPerIndex[idx];
     const pickups = events.pickups || [];
     const dropoffs = events.dropoffs || [];
-    
+
     // Compatibility keys for drawMap node highlight rendering
     if (pickups.length > 0) {
         activeAnimation.triggeredEvents.add('pickup-' + nodeName);
     }
-    
+
     // Board and deboard passengers
     pickups.forEach(name => activeAnimation.currentPassengersInCar.add(name));
     dropoffs.forEach(name => activeAnimation.currentPassengersInCar.delete(name));
     updatePassengersPill(activeAnimation.currentPassengersInCar);
-    
+
     // Generate beautiful speech bubble strings
     let eventTexts = [];
     if (dropoffs.length > 0) {
@@ -2412,7 +2497,7 @@ function triggerEventAtIndex(idx, nodeName, cx, cy) {
         eventTexts.push(`${pickups.join(" & ")} alındı! 🚗`);
         addLogLine(`SİMÜLASYON: ${pickups.join(" ve ")} alındı.`, "success");
     }
-    
+
     // Update the big overlay title and description on the map
     if (pickups.length > 0 && dropoffs.length > 0) {
         overlayTitle.innerHTML = `<i class="fa-solid fa-people-arrows overlay-icon"></i> Eşzamanlı Durak İşlemleri`;
@@ -2424,16 +2509,16 @@ function triggerEventAtIndex(idx, nodeName, cx, cy) {
         overlayTitle.innerHTML = `<i class="fa-solid fa-user-plus overlay-icon"></i> Yolcu Binişi`;
         overlayDesc.textContent = `${nodeName} durağında ${pickups.join(" ve ")} araca biniyor.`;
     }
-    
+
     const popupDuration = 1500;
-    
+
     const showPopup = (textIndex) => {
         if (!activeAnimation) return;
         if (textIndex >= eventTexts.length) {
             // Restore regular phase title when resume moving
             const segmentIndex = Math.floor(activeAnimation.progress * (activeAnimation.fullPath.length - 1));
             const isPickupPhase = segmentIndex < activeAnimation.lastPickupIdx;
-            
+
             if (isPickupPhase) {
                 if (activeAnimation.customerLoc3 || activeAnimation.customerLoc2) {
                     overlayTitle.innerHTML = `<i class="fa-solid fa-people-arrows overlay-icon"></i> Paylaşımlı Rota Bulundu`;
@@ -2451,18 +2536,18 @@ function triggerEventAtIndex(idx, nodeName, cx, cy) {
                     overlayDesc.textContent = `Araç müşteriyi hedefe (${activeAnimation.destLoc}) götürüyor.`;
                 }
             }
-            
+
             activeAnimation.isPaused = false;
             activeAnimation.popup = null;
             requestAnimationFrame(animateStep);
             return;
         }
-        
+
         activeAnimation.popup = {
             nodeName: nodeName,
             text: eventTexts[textIndex]
         };
-        
+
         drawMap({
             pickup: activeAnimation.pickupRoute,
             trip: activeAnimation.tripRoute,
@@ -2479,43 +2564,43 @@ function triggerEventAtIndex(idx, nodeName, cx, cy) {
             customerLoc3: activeAnimation.customerLoc3,
             destLoc3: activeAnimation.destLoc3
         });
-        
+
         setTimeout(() => {
             showPopup(textIndex + 1);
         }, popupDuration);
     };
-    
+
     showPopup(0);
 }
 
 // Yolculuk Başarıyla Bittiğinde Çalışan Temizlik ve Loglama Metodu
 function completeAnimation() {
     if (!activeAnimation) return;
-    
+
     overlayTitle.innerHTML = `<i class="fa-solid fa-flag-checkered overlay-icon"></i> Ulaşımlar Başarılı`;
     if (activeAnimation.customerLoc3 || activeAnimation.customerLoc2) {
         overlayDesc.textContent = "Tüm yolcular hedeflerine güvenle ulaştırıldı!";
     } else {
         overlayDesc.textContent = "Yolcu hedefine ulaştırıldı.";
     }
-    
+
     const finalLoc = activeAnimation.destLoc3 || activeAnimation.destLoc2 || activeAnimation.destLoc;
     addLogLine(`SİMÜLASYON: ${activeAnimation.id} taksisi yolculuğu tamamladı. Mevcut konumu artık: ${finalLoc}`, "success");
-    
+
     // Yolculuk özeti overlay'ini doldur ve göster
     const summaryOverlay = document.getElementById("trip-summary-overlay");
     const summaryList = document.getElementById("trip-summary-customers-list");
-    
+
     if (summaryOverlay && summaryList) {
         summaryList.innerHTML = "";
-        
+
         const summaryCustomers = [];
         if (activeAnimation.customer) summaryCustomers.push(activeAnimation.customer);
         if (activeAnimation.customer_2) summaryCustomers.push(activeAnimation.customer_2);
         if (activeAnimation.customer_3) summaryCustomers.push(activeAnimation.customer_3);
-        
+
         const isLight = document.body.classList.contains("light-theme");
-        
+
         summaryCustomers.forEach(c => {
             const card = document.createElement("div");
             card.className = "route-option-btn"; // consistent Routex buttons style!
@@ -2528,32 +2613,32 @@ function completeAnimation() {
             card.style.gap = "8px";
             card.style.transform = "none";
             card.style.boxShadow = "none";
-            
+
             const name = c.name || "Yolcu";
             const fare = c.fare || 0.0;
             const soloFare = c.solo_fare || 0.0;
             const saving = c.saving || 0.0;
             const startLoc = c.current_location || "";
             const destLoc = c.destination || "";
-            
+
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${name}</span>
                     <span class="route-option-badge shortest" style="background: rgba(16, 185, 129, 0.1); color: var(--success-light); font-size: 0.7rem; border-color: rgba(16, 185, 129, 0.2); font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; margin-left: auto;">
-                        Ödenen: $${fare.toFixed(2)}
+                        Ödenen: ${fare.toFixed(2)} TL
                     </span>
                 </div>
                 <div style="font-size: 0.8rem; color: var(--accent-light); font-weight: 600; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-route" style="color: var(--accent); font-size: 0.85rem;"></i> Rota: ${startLoc} ➔ ${destLoc}
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; width: 100%;">
-                    <span>Tek Başına Gitseydi: <strong style="color: var(--text-secondary);">$${soloFare.toFixed(2)}</strong></span>
-                    <span style="color: var(--success-light);">Tasarruf: <strong style="color: var(--success-light); font-weight: 700;">$${saving.toFixed(2)}</strong></span>
+                    <span>Tek Başına Gitseydi: <strong style="color: var(--text-secondary);">${soloFare.toFixed(2)} TL</strong></span>
+                    <span style="color: var(--success-light);">Tasarruf: <strong style="color: var(--success-light); font-weight: 700;">${saving.toFixed(2)} TL</strong></span>
                 </div>
             `;
             summaryList.appendChild(card);
         });
-        
+
         // Show summary overlay
         summaryOverlay.classList.remove("hidden");
     } else {
