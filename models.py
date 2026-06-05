@@ -1,8 +1,3 @@
-"""
-Akıllı Taksi/Kargo Çağırma ve Rota Optimizasyonu Simülasyonu - Veri Yapıları Modülü
-Bu dosya projenin nesne yönelimli programlama (OOP) ve saf Python veri yapılarını barındırır.
-"""
-
 class Customer:
     """
     Sistemdeki müşterileri veya kargo taleplerini temsil eden sınıf.

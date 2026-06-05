@@ -214,20 +214,19 @@ class TestTaxiSimulation(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["type"], "shared")
         
-        # Her iki yolcu da aynı yolu tamamen paylaştığı için:
-        # Ücret = 25.0 + (2.6 km * 8.0) / 2 = 35.4 TL.
+        # Ücret = (25.0 + 2.6 km * 8.0) / 2 = 22.9 TL.
         # Solo Ücret = 25.0 + 2.6 km * 8.0 = 45.8 TL.
-        # Tasarruf = 45.8 - 35.4 = 10.4 TL.
+        # Tasarruf = 45.8 - 22.9 = 22.9 TL.
         u_cust = result["customer"]
         c_cust = result["customer_2"]
 
-        self.assertAlmostEqual(u_cust["fare"], 35.4)
+        self.assertAlmostEqual(u_cust["fare"], 22.9)
         self.assertAlmostEqual(u_cust["solo_fare"], 45.8)
-        self.assertAlmostEqual(u_cust["saving"], 10.4)
+        self.assertAlmostEqual(u_cust["saving"], 22.9)
 
-        self.assertAlmostEqual(c_cust["fare"], 35.4)
+        self.assertAlmostEqual(c_cust["fare"], 22.9)
         self.assertAlmostEqual(c_cust["solo_fare"], 45.8)
-        self.assertAlmostEqual(c_cust["saving"], 10.4)
+        self.assertAlmostEqual(c_cust["saving"], 22.9)
 
     def test_savings_maximizing_and_detour_compensation(self):
         """Uzatılan yol (detour) durumunda indirimlerin ve en az %15 tasarruf garantisinin uygulandığını doğrular."""

@@ -409,55 +409,6 @@ body {
     overflow: hidden;
 }
 
-/* Harita Zoom & Pan Kontrol Paneli (Apple Glassmorphism) */
-.map-zoom-controls {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 12;
-    background: rgba(15, 21, 38, 0.8);
-    border: 1px solid var(--panel-border);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 6px;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    pointer-events: auto;
-}
-
-body.light-theme .map-zoom-controls {
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-}
-
-.map-zoom-controls button {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.map-zoom-controls button:hover {
-    background: var(--accent);
-    color: white;
-    transform: scale(1.05);
-}
-
-.map-zoom-controls button:active {
-    transform: scale(0.95);
-}
 
 #map-canvas {
     display: block;

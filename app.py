@@ -19,7 +19,6 @@ customer_id_counter = 100
 
 @app.route("/")
 def index():
-    """Göz alıcı Dashboard arayüzünü sunan anasayfa."""
     return render_template("index.html")
 
 
@@ -44,10 +43,7 @@ def get_status():
 
 @app.route("/api/customer", methods=["POST"])
 def add_customer():
-    """
-    Yeni bir müşteri talebini alır ve FIFO kuyruğuna ekler.
-    Gövde (JSON): { "name": str, "current_location": str, "destination": str }
-    """
+    """ { "name": str, "current_location": str, "destination": str } """
     global customer_id_counter
     data = request.get_json()
 
