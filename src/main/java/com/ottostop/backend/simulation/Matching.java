@@ -301,7 +301,16 @@ public class Matching {
 
                     double totalSavings = Math.max(0.0, soloSum - sharedSum);
                     double totalDist = (double) matchData.get("total_distance");
-                    double score = totalSavings - 0.001 * totalDist;
+                    
+                    double sumPercentageSavings = 0.0;
+                    for (Customer p : combo) {
+                        double sFare = 25.0 + calculateDistance(manager, p.getCurrentLocation(), p.getDestination()) * 8.0;
+                        double fVal = fares.get(p.getId());
+                        sumPercentageSavings += Math.max(0.0, (sFare - fVal) / sFare);
+                    }
+                    double avgDiscountPercent = (sumPercentageSavings / combo.size()) * 100.0;
+
+                    double score = avgDiscountPercent - 0.001 * totalDist;
 
                     Map<String, Object> cand = new HashMap<>();
                     cand.put("combo", combo);
@@ -312,6 +321,7 @@ public class Matching {
                     cand.put("score", score);
                     cand.put("fares", fares);
                     cand.put("total_savings", totalSavings);
+                    cand.put("average_discount_percent", avgDiscountPercent);
 
                     candidates.add(cand);
                 }
@@ -364,6 +374,7 @@ public class Matching {
         customer1Ext.put("fare", fVal1);
         customer1Ext.put("solo_fare", sFare1);
         customer1Ext.put("saving", Math.max(0.0, sFare1 - fVal1));
+        customer1Ext.put("discount_percent", Math.max(0.0, (sFare1 - fVal1) / sFare1 * 100.0));
         response.put("customer", customer1Ext);
 
         Map<String, Object> vDict = new HashMap<>();
@@ -395,6 +406,7 @@ public class Matching {
             cd.put("fare", fVal);
             cd.put("solo_fare", sFare);
             cd.put("saving", Math.max(0.0, sFare - fVal));
+            cd.put("discount_percent", Math.max(0.0, (sFare - fVal) / sFare * 100.0));
             bestCustData.add(cd);
         }
         bestAlt.put("customers", bestCustData);
@@ -432,6 +444,7 @@ public class Matching {
                     cd.put("fare", fVal);
                     cd.put("solo_fare", sFare);
                     cd.put("saving", Math.max(0.0, sFare - fVal));
+                    cd.put("discount_percent", Math.max(0.0, (sFare - fVal) / sFare * 100.0));
                     bestCustDataCand.add(cd);
                 }
                 alt.put("customers", bestCustDataCand);
@@ -466,6 +479,7 @@ public class Matching {
                 cd.put("fare", sFare);
                 cd.put("solo_fare", sFare);
                 cd.put("saving", 0.0);
+                cd.put("discount_percent", 0.0);
                 cData.add(cd);
                 alt.put("customers", cData);
                 alt.put("savings", 0.0);

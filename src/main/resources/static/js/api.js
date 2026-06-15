@@ -141,7 +141,10 @@ async function handleSimulationStep() {
                     resMatchType.textContent = "2'li Paylaşımlı Eşleşme 🚗💨";
                 }
 
-                resSavings.textContent = `${step.savings.toFixed(2)} km`;
+                const chosenAvgDiscount = initialCustomers.length > 0 
+                    ? initialCustomers.reduce((acc, c) => acc + (c.discount_percent || 0), 0) / initialCustomers.length 
+                    : 0;
+                resSavings.textContent = `Toplam Tasarruf: ${step.savings.toFixed(2)} TL | Kişi Başı İndirim: %${chosenAvgDiscount.toFixed(0)}`;
                 resSavingsRow.classList.remove("hidden");
             } else {
                 resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;

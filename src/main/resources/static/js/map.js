@@ -234,9 +234,16 @@ function showRouteSelector(step) {
         const timeline = getSimplifiedTimeline(opt.pickupRoute, opt.tripRoute, opt.customers);
         const faresList = opt.customers.map(c => `${c.name}: ${(c.fare || 0).toFixed(2)} TL`).join(", ");
 
+        const avgDiscount = opt.customers && opt.customers.length > 0 
+            ? opt.customers.reduce((acc, c) => acc + (c.discount_percent || 0), 0) / opt.customers.length 
+            : 0;
+
         btn.innerHTML = `
             <div class="route-option-header" style="align-items: flex-start;">
-                <span class="route-option-badge ${opt.badgeClass}">${opt.badgeText}</span>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span class="route-option-badge ${opt.badgeClass}">${opt.badgeText}</span>
+                    ${opt.savings > 0 ? `<span style="font-size: 0.7rem; color: #10b981; font-weight: 700; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.2); width: fit-content;"><i class="fa-solid fa-piggy-bank"></i> Toplam Tasarruf: ${opt.savings.toFixed(2)} TL | Kişi Başı İndirim: %${avgDiscount.toFixed(0)}</span>` : ''}
+                </div>
                 <span class="route-option-dist" style="display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px;">
                     <strong style="font-size: 0.95rem; color: var(--text-primary); font-weight: 700;">${opt.totalDistance.toFixed(2)} km</strong>
                     <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Alış: ${opt.pickupDistance.toFixed(2)} km + Seyahat: ${opt.tripDistance.toFixed(2)} km)</span>
@@ -317,7 +324,10 @@ function showRouteSelector(step) {
                     resMatchType.textContent = "2'li Paylaşımlı Eşleşme 🚗💨";
                 }
 
-                resSavings.textContent = `${step.savings.toFixed(2)} km`;
+                const chosenAvgDiscount = opt.customers && opt.customers.length > 0 
+                    ? opt.customers.reduce((acc, c) => acc + (c.discount_percent || 0), 0) / opt.customers.length 
+                    : 0;
+                resSavings.textContent = `Toplam Tasarruf: ${step.savings.toFixed(2)} TL | Kişi Başı İndirim: %${chosenAvgDiscount.toFixed(0)}`;
                 resSavingsRow.classList.remove("hidden");
             } else {
                 resCustomer.textContent = `${step.customer.name} (Ücret: ${(step.customer.fare || 0).toFixed(2)} TL)`;
@@ -1704,24 +1714,22 @@ function completeAnimation() {
         const isLight = document.body.classList.contains("light-theme");
 
         summaryCustomers.forEach(c => {
-            const card = document.createElement("div");
-            card.className = "route-option-btn"; // consistent Routex buttons style!
-            card.style.background = isLight ? "rgba(0, 0, 0, 0.02)" : "rgba(255, 255, 255, 0.02)";
-            card.style.borderColor = isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)";
-            card.style.cursor = "default";
-            card.style.padding = "14px 16px";
-            card.style.display = "flex";
-            card.style.flexDirection = "column";
-            card.style.gap = "8px";
-            card.style.transform = "none";
-            card.style.boxShadow = "none";
-
             const name = c.name || "Yolcu";
             const fare = c.fare || 0.0;
             const soloFare = c.solo_fare || 0.0;
             const saving = c.saving || 0.0;
+            const discount = c.discount_percent || 0.0;
             const startLoc = c.current_location || "";
             const destLoc = c.destination || "";
+
+            const card = document.createElement("div");
+            card.style.background = isLight ? "rgba(255,255,255,0.8)" : "rgba(30, 41, 59, 0.7)";
+            card.style.border = isLight ? "1px solid rgba(0,0,0,0.06)" : "1px solid rgba(255,255,255,0.05)";
+            card.style.padding = "10px 12px";
+            card.style.borderRadius = "8px";
+            card.style.display = "flex";
+            card.style.flexDirection = "column";
+            card.style.gap = "4px";
 
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
